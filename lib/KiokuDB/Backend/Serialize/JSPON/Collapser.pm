@@ -32,14 +32,13 @@ sub visit_object {
     my ( $self, $object ) = @_;
 
     if ( obj $object, 'KiokuDB::Reference' ) {
-        return { '$ref' => $object->id, ( $object->is_weak ? ( weak => 1 ) : () ) };
+        return { '$ref' => $object->id . ".data", ( $object->is_weak ? ( weak => 1 ) : () ) };
     } elsif ( obj $object, 'KiokuDB::Entry' ) {
-        croak("Unsupported data for JSPON: ", $object->data) unless ref($object->data) eq 'HASH';
         my $id = $object->id;
         return {
             ( $object->has_class ? ( __CLASS__ => $object->class ) : () ),
             ( $id ? ( id => $id ) : () ),
-            $self->visit_hash_entries($object->data),
+            data => $self->visit_hash($object->data),
         };
     }
 

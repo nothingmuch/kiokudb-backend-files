@@ -17,17 +17,16 @@ extends qw(Data::Visitor);
 sub expand_jspon {
     my ( $self, $data, @attrs ) = @_;
 
-    my $id = delete $data->{id};
-
     if ( exists $data->{__CLASS__} ) {
         # check the class more thoroughly here ...
-        my ($class, $version, $authority) = (split '-' => delete $data->{__CLASS__});
+        my ($class, $version, $authority) = (split '-' => $data->{__CLASS__});
         push @attrs, class => $class;
     }
 
+    push @attrs, data => $self->visit($data->{data});
+
     return KiokuDB::Entry->new(
-        id   => $id,
-        data => $self->visit($data),
+        %$data,
         @attrs,
     );
 }
@@ -42,6 +41,7 @@ sub visit_hash {
     my ( $self, $hash ) = @_;
 
     if ( my $id = $hash->{'$ref'} ) {
+        $id =~ s/\.data$//;
         return KiokuDB::Reference->new( id => $id, ( $hash->{weak} ? ( is_weak => 1 ) : () ) );
     } else {
         return $self->SUPER::visit_hash($hash);
