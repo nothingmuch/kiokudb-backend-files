@@ -38,7 +38,7 @@ sub visit_object {
         return {
             ( $object->has_class ? ( __CLASS__ => $object->class ) : () ),
             ( $id ? ( id => $id ) : () ),
-            data => $self->visit_hash($object->data),
+            data => $self->visit_ref($object->data),
         };
     }
 
