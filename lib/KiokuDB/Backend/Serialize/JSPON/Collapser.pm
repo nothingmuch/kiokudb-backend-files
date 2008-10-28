@@ -38,12 +38,11 @@ sub visit_object {
         return {
             ( $object->has_class ? ( __CLASS__ => $object->class ) : () ),
             ( $id ? ( id => $id ) : () ),
-            data => $self->visit_ref($object->data),
+            data => $self->visit($object->data),
         };
+    } else {
+        return $object; # we let JSON complain about objects
     }
-
-    #return $object; # FIXME maybe we allow this for objects with hooks? not for now
-    croak "unexpected object ", $object, " in structure";
 }
 
 __PACKAGE__->meta->make_immutable;
