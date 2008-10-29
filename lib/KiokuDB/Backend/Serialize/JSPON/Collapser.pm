@@ -3,7 +3,6 @@
 package KiokuDB::Backend::Serialize::JSPON::Collapser;
 use Moose;
 
-use Check::ISA;
 use Devel::PartialDump qw(croak);
 
 use KiokuDB::Entry;
@@ -31,9 +30,9 @@ sub visit_hash_key {
 sub visit_object {
     my ( $self, $object ) = @_;
 
-    if ( obj $object, 'KiokuDB::Reference' ) {
+    if ( ref($object) eq 'KiokuDB::Reference' ) {
         return { '$ref' => $object->id . ".data", ( $object->is_weak ? ( weak => 1 ) : () ) };
-    } elsif ( obj $object, 'KiokuDB::Entry' ) {
+    } elsif ( ref($object) eq 'KiokuDB::Entry' ) {
         my $id = $object->id;
         return {
             ( $object->has_class ? ( __CLASS__ => $object->class ) : () ),
