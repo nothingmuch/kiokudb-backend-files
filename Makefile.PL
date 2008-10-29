@@ -12,10 +12,11 @@ WriteMakefile(
     INSTALLDIRS  => 'site',
     SIGN         => 1,
     PL_FILES     => { },
-    EXE_FILES    => [ grep { /\w$/ } glob("bin/*") ],
     PREREQ_PM    => {
         'Moose' => 0,
-		'KiokuDB' => 0,
+        'KiokuDB' => 0.03,
+
+        'Test::TempDir' => 0,
 
         'JSON' => 0,
         'File::NFSLock' => 0,

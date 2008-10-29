@@ -3,8 +3,6 @@
 package KiokuDB::Backend::Serialize::JSPON::Collapser;
 use Moose;
 
-use Devel::PartialDump qw(croak);
-
 use KiokuDB::Entry;
 use KiokuDB::Reference;
 
