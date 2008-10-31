@@ -20,10 +20,10 @@ our $VERSION = "0.02";
 with qw(
     KiokuDB::Backend
     KiokuDB::Backend::Serialize::JSPON
-    KiokuDB::Backend::UnicodeSafe
-    KiokuDB::Backend::Clear
-    KiokuDB::Backend::Scan
-    KiokuDB::Backend::Query::Simple::Linear
+    KiokuDB::Backend::Role::UnicodeSafe
+    KiokuDB::Backend::Role::Clear
+    KiokuDB::Backend::Role::Scan
+    KiokuDB::Backend::Role::Query::Simple::Linear
 );
 
 sub BUILD {
