@@ -185,13 +185,7 @@ sub insert_entry {
 sub read_entry {
     my ( $self, $id ) = @_;
 
-    my $data = $self->slurp_file($self->object_file($id));
-
-    my %attrs;
-
-    $attrs{root} = 1 if -e $self->root_set_file($id);
-
-    return ( $data, %attrs );
+    $self->slurp_file($self->object_file($id));
 }
 
 sub slurp_file {
