@@ -1,0 +1,2 @@
+0.04
+    - update test suite to not use KiokuDB::Resolver
