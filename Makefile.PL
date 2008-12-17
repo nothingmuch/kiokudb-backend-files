@@ -14,7 +14,7 @@ WriteMakefile(
     PL_FILES     => { },
     PREREQ_PM    => {
         'Moose' => 0,
-        'KiokuDB' => 0.07,
+        'KiokuDB' => 0.09,
 
         'Test::TempDir' => 0,
 
