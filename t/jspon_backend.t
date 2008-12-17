@@ -13,8 +13,8 @@ use JSON;
 
 use ok 'KiokuDB::Backend::JSPON';
 use ok 'KiokuDB::Collapser';
-use ok 'KiokuDB::Resolver';
 use ok 'KiokuDB::LiveObjects';
+use ok 'KiokuDB::TypeMap::Resolver';
 
 {
     package Foo;
@@ -50,9 +50,7 @@ my $obj = Foo->new(
 $obj->friend->friend($obj);
 
 my $c = KiokuDB::Collapser->new(
-    resolver => KiokuDB::Resolver->new(
-        live_objects => my $lo = KiokuDB::LiveObjects->new,
-    ),
+    live_objects => my $lo = KiokuDB::LiveObjects->new,
     typemap_resolver => KiokuDB::TypeMap::Resolver->new(
         typemap => KiokuDB::TypeMap->new
     ),
