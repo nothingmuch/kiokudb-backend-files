@@ -1,2 +1,5 @@
+0.05
+    - Depend on a more recent IO (binmode method is missing in older ones)
+
 0.04
     - update test suite to not use KiokuDB::Resolver
