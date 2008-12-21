@@ -18,7 +18,6 @@ WriteMakefile(
 
         'Test::TempDir' => 0,
 
-        'JSON' => 0,
         'File::NFSLock' => 0,
         'IO::AtomicFile' => 0,
         'IO' => '1.2301', # binmode method

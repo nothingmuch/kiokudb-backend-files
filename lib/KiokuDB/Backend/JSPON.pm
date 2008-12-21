@@ -19,7 +19,7 @@ our $VERSION = "0.04";
 
 with qw(
     KiokuDB::Backend
-    KiokuDB::Backend::Serialize::JSPON
+    KiokuDB::Backend::Serialize::JSON
     KiokuDB::Backend::Role::UnicodeSafe
     KiokuDB::Backend::Role::Clear
     KiokuDB::Backend::Role::Scan
@@ -98,26 +98,6 @@ sub _build_lock_file {
     $self->dir->file("lock");
 }
 
-has pretty => (
-    isa => "Bool",
-    is  => "rw",
-    default => 0,
-);
-
-has json => (
-    isa => "Object",
-    is  => "rw",
-    lazy_build => 1,
-    handles => [qw(encode decode)],
-);
-
-sub _build_json {
-    my $self = shift;
-    my $json = JSON->new->canonical;
-    $json->pretty if $self->pretty;
-    return $json;
-}
-
 sub write_lock {
     my $self = shift;
 
@@ -167,19 +147,13 @@ sub get_entry {
 
     my ( $json, @attrs ) = $self->read_entry($uid);
 
-    my $data = $self->decode($json);
-
-    my $entry = $self->expand_jspon($data, @attrs);
-
-    return $entry;
+    return $self->deserialize($json, @attrs);
 }
 
 sub insert_entry {
     my ( $self, $entry ) = @_;
 
-    my $data = $self->collapse_jspon($entry);
-
-    $self->write_entry( $entry => $self->encode($data) );
+    $self->write_entry( $entry => $self->serialize($entry) );
 }
 
 sub read_entry {
@@ -255,9 +229,7 @@ sub all_entries {
     Data::Stream::Bulk::Path::Class->new( dir => $self->object_dir, only_files => 1 )->filter(sub { [ map {
         my $json = $self->slurp_file($_);
         my $root = -e $root_set_dir->file($_->basename);
-        my $data = $self->decode($json);
-
-        $self->expand_jspon( $data, ( $root ? ( root => 1 ) : () ) );
+        $self->deserialize( $json, ( $root ? ( root => 1 ) : () ) );
     } @$_ ]});
 }
 
@@ -266,8 +238,7 @@ sub root_entries {
 
     Data::Stream::Bulk::Path::Class->new( dir => $self->root_set_dir, only_files => 1 )->filter(sub { [ map {
         my $json = $self->slurp_file($_);
-        my $data = $self->decode($json);
-        $self->expand_jspon( $data, root => 1 );
+        $self->deserialize( $json, root => 1 );
     } @$_ ]});
 }
 
