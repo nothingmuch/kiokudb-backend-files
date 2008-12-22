@@ -15,7 +15,7 @@ use MooseX::Types::Path::Class qw(Dir File);
 
 use namespace::clean -except => 'meta';
 
-our $VERSION = "0.04";
+our $VERSION = "0.05";
 
 with qw(
     KiokuDB::Backend
