@@ -167,8 +167,6 @@ sub slurp_file {
 
     my $fh = $file->openr || croak("slurp_file($file): $!");
 
-    $fh->binmode(":utf8");
-
     my $data = do { local $/; <$fh> };
 
     return $data;
@@ -182,8 +180,6 @@ sub write_entry {
     my $file = $self->object_file($id);
 
     my $fh = IO::AtomicFile->open( $file, "w" );
-
-    $fh->binmode(":utf8");
 
     $fh->print( $json );
 
