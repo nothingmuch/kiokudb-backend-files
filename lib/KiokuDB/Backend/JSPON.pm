@@ -26,6 +26,9 @@ reference semantics
 
 =head1 DESCRIPTION
 
+This is just the L<KiokuDB::Backend::Files> backend with the serializer default
+set to C<json> for backwards compatibility.
+
 L<http://www.jspon.org/|JSPON> is a standard for encoding object graphs in
 JSON.
 

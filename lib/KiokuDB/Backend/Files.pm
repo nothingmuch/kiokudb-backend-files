@@ -55,6 +55,11 @@ has object_dir => (
     lazy_build => 1,
 );
 
+sub _build_object_dir {
+    my $self = shift;
+    $self->dir->subdir("all");
+}
+
 # TODO implement trie fanning on disk
 has trie => (
     isa => "Bool",
@@ -75,11 +80,6 @@ has trie_levels => (
     is  => "rw",
     default => 2,
 );
-
-sub _build_object_dir {
-    my $self = shift;
-    $self->dir->subdir("all");
-}
 
 has root_set_dir => (
     isa => Dir,
@@ -261,3 +261,72 @@ __PACKAGE__->meta->make_immutable;
 __PACKAGE__
 
 __END__
+
+=pod
+
+=head1 NAME
+
+KiokuDB::Backend::Files - One file per object backend
+
+=head1 SYNOPSIS
+
+    KiokuDB->connect(
+        "files:dir=path/to/data",
+        serializer => "yaml", # defaults to storable
+    );
+
+=head1 DESCRIPTION
+
+This backend provides a file based backend, utilizing L<IO::AtomicFile> and
+L<File::NFSLock> for safety.
+
+This is one of the slower backends, and the support for searching is very
+limited (only a linear scan is supported), but it is suitable for small, simple
+projects.
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item dir
+
+The directory for the backend.
+
+=item create
+
+If true (defaults to false) the directories will be created at instantiation time.
+
+=item lock
+
+Whether or not locking is enabled.
+
+Defaults to true.
+
+=item object_dir
+
+Defaults to the subdirectory C<all> of C<dir>
+
+=item root_dir
+
+Defaults to the subdirectory C<root> of C<dir>
+
+Root set entries are hard linked into this directory as well.
+
+=item trie
+
+If true (defaults to false) instead of one flat hierarchy, the files will be
+put in subdirectories based on their IDs. This is useful if your file system is
+limited and you have lots of entries in the database.
+
+=item trie_nybbles
+
+How many hex nybbles to take off of the ID. Defaults to 3, which means up to
+4096 subdirectories per directory.
+
+=item trie_levels
+
+How many subdirectories to use.
+
+Defaults to 2.
+
+=back
