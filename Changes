@@ -1,3 +1,9 @@
+0.01 (JSPON 0.06)
+    - Rename to KiokuDB::Backend::Files
+    - add 'create' attribute
+    - switch to Serialize::Delegate
+    - add trie support
+
 0.05
     - Depend on a more recent IO (binmode method is missing in older ones)
     - Refactor JSON handling and move to KiokuDB core
