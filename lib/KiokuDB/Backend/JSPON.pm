@@ -19,12 +19,13 @@ our $VERSION = "0.05";
 
 with qw(
     KiokuDB::Backend
-    KiokuDB::Backend::Serialize::JSON
-    KiokuDB::Backend::Role::UnicodeSafe
+    KiokuDB::Backend::Serialize::Delegate
     KiokuDB::Backend::Role::Clear
     KiokuDB::Backend::Role::Scan
     KiokuDB::Backend::Role::Query::Simple::Linear
 );
+
+has '+serializer' => ( default => "json" );
 
 sub BUILD {
     my $self = shift;
@@ -145,35 +146,19 @@ sub exists {
 sub get_entry {
     my ( $self, $uid ) = @_;
 
-    my ( $json, @attrs ) = $self->read_entry($uid);
+    my $fh = $self->open_entry($uid);
 
-    return $self->deserialize($json, @attrs);
+    return $self->serializer->deserialize_from_stream($fh);
+}
+
+sub open_entry {
+    my ( $self, $id ) = @_;
+
+    $self->object_file($id)->openr;
 }
 
 sub insert_entry {
     my ( $self, $entry ) = @_;
-
-    $self->write_entry( $entry => $self->serialize($entry) );
-}
-
-sub read_entry {
-    my ( $self, $id ) = @_;
-
-    $self->slurp_file($self->object_file($id));
-}
-
-sub slurp_file {
-    my ( $self, $file ) = @_;
-
-    my $fh = $file->openr || croak("slurp_file($file): $!");
-
-    my $data = do { local $/; <$fh> };
-
-    return $data;
-}
-
-sub write_entry {
-    my ( $self, $entry, $json ) = @_;
 
     my $id = $entry->id;
 
@@ -181,7 +166,7 @@ sub write_entry {
 
     my $fh = IO::AtomicFile->open( $file, "w" );
 
-    $fh->print( $json );
+    $self->serializer->serialize_to_stream($fh, $entry);
 
     {
         my $lock = $self->write_lock;
@@ -220,21 +205,20 @@ sub clear {
 sub all_entries {
     my $self = shift;
 
-    my $root_set_dir = $self->root_set_dir;
+    my $ser = $self->serializer;
 
     Data::Stream::Bulk::Path::Class->new( dir => $self->object_dir, only_files => 1 )->filter(sub { [ map {
-        my $json = $self->slurp_file($_);
-        my $root = -e $root_set_dir->file($_->basename);
-        $self->deserialize( $json, ( $root ? ( root => 1 ) : () ) );
+        $ser->deserialize_from_stream( $_->openr );
     } @$_ ]});
 }
 
 sub root_entries {
     my $self = shift;
 
+    my $ser = $self->serializer;
+
     Data::Stream::Bulk::Path::Class->new( dir => $self->root_set_dir, only_files => 1 )->filter(sub { [ map {
-        my $json = $self->slurp_file($_);
-        $self->deserialize( $json, root => 1 );
+        $ser->deserialize_from_stream( $_->openr );
     } @$_ ]});
 }
 
