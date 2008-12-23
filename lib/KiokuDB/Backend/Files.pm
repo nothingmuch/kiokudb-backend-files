@@ -27,7 +27,13 @@ with qw(
 
 sub BUILD {
     my $self = shift;
-    $self->create_dirs;
+
+    if ( $self->create ) {
+        $self->create_dirs;
+    } else {
+        my $dir = $self->dir;
+        $dir->open || croak("$dir: $!");
+    }
 }
 
 has dir => (
@@ -35,6 +41,12 @@ has dir => (
     is  => "ro",
     required => 1,
     coerce   => 1,
+);
+
+has create => (
+    isa => "Bool",
+    is  => "ro",
+    default => 0,
 );
 
 has object_dir => (
