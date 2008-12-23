@@ -330,3 +330,19 @@ How many subdirectories to use.
 Defaults to 2.
 
 =back
+
+=head1 VERSION CONTROL
+
+L<http://github.com/nothingmuch/kiokudb-backend-files>
+
+=head1 AUTHOR
+
+Yuval Kogman E<lt>nothingmuch@woobling.orgE<gt>
+
+=head1 COPYRIGHT
+
+    Copyright (c) 2008 Yuval Kogman, Infinity Interactive. All rights
+    reserved This program is free software; you can redistribute
+    it and/or modify it under the same terms as Perl itself.
+
+=cut
