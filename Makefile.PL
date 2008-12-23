@@ -7,8 +7,8 @@ use ExtUtils::MakeMaker;
 require 5.008; # utf8 and what not
 
 WriteMakefile(
-    NAME         => 'KiokuDB::Backend::JSPON',
-    VERSION_FROM => 'lib/KiokuDB/Backend/JSPON.pm',
+    NAME         => 'KiokuDB::Backend::Files',
+    VERSION_FROM => 'lib/KiokuDB/Backend/Files.pm',
     INSTALLDIRS  => 'site',
     SIGN         => 1,
     PL_FILES     => { },

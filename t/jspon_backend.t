@@ -36,7 +36,7 @@ use ok 'KiokuDB::TypeMap::Resolver';
     );
 }
 
-my $b = KiokuDB::Backend::JSPON->new( dir => temp_root, pretty => 1, lock => 0 );
+my $b = KiokuDB::Backend::JSPON->new( dir => temp_root, serializer => { format => "json", pretty => 1 }, lock => 0 );
 
 my $obj = Foo->new(
     id => "shlomo",
