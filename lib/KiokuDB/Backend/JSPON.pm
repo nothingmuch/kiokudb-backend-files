@@ -21,8 +21,7 @@ __END__
 
 =head1 NAME
 
-KiokuDB::Backend::JSPON - JSON file backend with JSPON
-reference semantics
+KiokuDB::Backend::JSPON - Deprecated, use L<KiokuDB::Backend::Files>
 
 =head1 DESCRIPTION
 
@@ -34,16 +33,5 @@ JSON.
 
 The representation is based on explicit ID based references, and so is simple
 enough to be stored in JSON.
-
-=head1 TODO
-
-=over 4
-
-=item *
-
-Refactor into FS role and general JSPON role, and implement a REST based
-backend too
-
-=back
 
 =cut
