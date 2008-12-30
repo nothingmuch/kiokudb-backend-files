@@ -172,7 +172,8 @@ sub insert_entry {
     my $root_file = $self->root_set_file($id);
 
     if ( $entry->root ) {
-        $t->symlink($file, $root_file);
+        my $targ = File::Spec->catfile( File::Spec->updir, $file );
+        $t->symlink($targ, $root_file);
     } else {
         $t->unlink($root_file);
     }
@@ -240,6 +241,7 @@ sub all_entries {
     bulk($self->get(@ids));
 }
 
+# broken:
 sub root_entries__ {
     my $self = shift;
 
