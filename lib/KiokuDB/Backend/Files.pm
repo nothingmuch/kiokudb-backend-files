@@ -282,8 +282,8 @@ KiokuDB::Backend::Files - One file per object backend
 
 =head1 DESCRIPTION
 
-This backend provides a file based backend, utilizing L<IO::AtomicFile> and
-L<File::NFSLock> for safety.
+This backend provides a file based backend using L<Directory::Transactional> to
+provide ACID semantics.
 
 This is one of the slower backends, and the support for searching is very
 limited (only a linear scan is supported), but it is suitable for small, simple
