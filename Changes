@@ -1,3 +1,6 @@
+0.02_01
+    - Use Directory::Transactional to provide transaction support
+
 0.01 (JSPON 0.06)
     - Rename to KiokuDB::Backend::Files
     - add 'create' attribute
