@@ -18,10 +18,11 @@ WriteMakefile(
 
         'Test::TempDir' => 0,
 
-        'File::NFSLock' => 0,
-        'IO::AtomicFile' => 0,
-        'IO' => '1.2301', # binmode method
-        'Path::Class' => 0,
         'MooseX::Types::Path::Class' => 0,
+
+        'IO' => '1.2301', # binmode method
+
+        'File::Path' => 2.07,
+        'Directory::Transactional' => 0,
     },
 );

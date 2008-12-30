@@ -5,9 +5,12 @@ use Moose;
 
 use Carp qw(croak);
 
-use File::NFSLock;
-use IO::AtomicFile;
 use JSON;
+
+use File::Spec;
+use File::Path qw(remove_tree make_path);
+
+use Directory::Transactional;
 
 use Data::Stream::Bulk::Path::Class;
 
@@ -20,9 +23,8 @@ our $VERSION = "0.01";
 with qw(
     KiokuDB::Backend
     KiokuDB::Backend::Serialize::Delegate
-    KiokuDB::Backend::Role::Clear
-    KiokuDB::Backend::Role::Scan
-    KiokuDB::Backend::Role::Query::Simple::Linear
+    KiokuDB::Backend::Role::TXN
+    KiokuDB::Backend::Role::TXN::Nested
 );
 
 sub BUILD {
@@ -50,15 +52,16 @@ has create => (
 );
 
 has object_dir => (
-    isa => Dir,
+    isa => "Str",
     is  => "ro",
-    lazy_build => 1,
+    default => "all",
 );
 
-sub _build_object_dir {
-    my $self = shift;
-    $self->dir->subdir("all");
-}
+has root_set_dir => (
+    isa => "Str",
+    is  => "ro",
+    default => "root",
+);
 
 # TODO implement trie fanning on disk
 has trie => (
@@ -81,41 +84,23 @@ has trie_levels => (
     default => 2,
 );
 
-has root_set_dir => (
-    isa => Dir,
+has _txn_manager => (
+    isa => "Directory::Transactional",
     is  => "ro",
     lazy_build => 1,
 );
 
-sub _build_root_set_dir {
-    my $self = shift;
-    $self->dir->subdir("root");
-}
-
-has lock => (
-    isa => "Bool",
-    is  => "rw",
-    default => 1,
-);
-
-has lock_file => (
-    isa => File,
-    is  => "ro",
-    lazy_build => 1,
-);
-
-sub _build_lock_file {
-    my $self = shift;
-    $self->dir->file("lock");
-}
-
-sub write_lock {
+sub _build__txn_manager {
     my $self = shift;
 
-    return 1 unless $self->lock;
-
-    File::NFSLock->new({ file => $self->lock_file->stringify, lock_type => "EXCLUSIVE" });
+    Directory::Transactional->new(
+        root => $self->dir,
+    );
 }
+
+sub txn_begin { shift->_txn_manager->txn_begin(@_) }
+sub txn_commit { shift->_txn_manager->txn_commit(@_) }
+sub txn_rollback { shift->_txn_manager->txn_rollback(@_) }
 
 sub get {
     my ( $self, @uids ) = @_;
@@ -136,9 +121,11 @@ sub delete {
 
     my @uids = map { ref($_) ? $_->id : $_ } @ids_or_entries;
 
+    my $t = $self->_txn_manager;
+
     foreach my $uid ( @uids ) {
         foreach my $file ( $self->object_file($uid), $self->root_set_file($uid) ) {
-            $file->remove;
+            $t->unlink($file);
         }
     }
 }
@@ -146,7 +133,8 @@ sub delete {
 sub exists {
     my ( $self, @uids ) = @_;
 
-    map { -e $self->object_file($_) } @uids;
+    my $t = $self->_txn_manager;
+    map { $t->exists($self->object_file($_)) } @uids;
 }
 
 sub get_entry {
@@ -160,7 +148,7 @@ sub get_entry {
 sub open_entry {
     my ( $self, $id ) = @_;
 
-    $self->object_file($id)->openr;
+    $self->_txn_manager->openr( $self->object_file($id) );
 }
 
 sub insert_entry {
@@ -170,70 +158,65 @@ sub insert_entry {
 
     my $file = $self->object_file($id);
 
-    $file->parent->mkpath unless -d $file->parent;
+    my $t = $self->_txn_manager;
 
-    my $fh = IO::AtomicFile->open( $file, "w" );
+    my $fh = $t->openw($file);
 
     $self->serializer->serialize_to_stream($fh, $entry);
 
-    {
-        my $lock = $self->write_lock;
+    close $fh || croak "Couldn't store: $!";
 
-        $fh->close || croak "Couldn't store: $!";
+    my $root_file = $self->root_set_file($id);
 
-        my $root_file = $self->root_set_file($id);
-        $root_file->remove;
-
-        if ( $entry->root ) {
-            $root_file->parent->mkpath unless -d $root_file->parent;
-            link( $file, $root_file );
-        }
+    if ( $entry->root ) {
+        $t->symlink($file, $root_file);
+    } else {
+        $t->unlink($root_file);
     }
 }
 
-sub _trie_dir {
-    my ( $self, $dir, $uid ) = @_;
+sub _trie_path {
+    my ( $self, @path ) = @_;
 
-    return $dir unless $self->trie;
+    return File::Spec->catfile(@path) unless $self->trie;
+
+    my $uid = pop @path;
 
     my $id_hex = unpack("H*", $uid);
 
     my $nyb = $self->trie_nybbles;
 
     for ( 1 .. $self->trie_levels ) {
-        $dir = $dir->subdir( substr($id_hex, 0, $nyb, '') );
+        push @path, substr($id_hex, 0, $nyb, '');
     }
 
-    return $dir;
+    File::Spec->catfile( @path, $uid );
 }
 
 sub object_file {
     my ( $self, $uid ) = @_;
 
-    my $dir = $self->_trie_dir( $self->object_dir, $uid);
-
-    $dir->file($uid);
+    $self->_trie_path( $self->object_dir, $uid);
 }
 
 sub root_set_file {
     my ( $self, $uid ) = @_;
 
-    my $dir = $self->_trie_dir( $self->root_set_dir, $uid);
-
-    $dir->file($uid);
+    $self->_trie_path( $self->root_set_dir, $uid );
 }
 
 sub create_dirs {
     my $self = shift;
 
-    $self->object_dir->mkpath;
-    $self->root_set_dir->mkpath;
+    make_path( $self->object_dir );
+    make_path( $self->root_set_dir );
 }
 
 sub clear {
     my $self = shift;
 
-    $_->rmtree({ keep_root => 1 }) for $self->root_set_dir, $self->object_dir;
+    # FIXME transactional?
+    remove_tree( $_, { keep_root => 1 }) for $self->root_set_dir, File::Spec->catdir( $self->dir, $self->object_dir );
 }
 
 sub all_entries {
@@ -241,7 +224,8 @@ sub all_entries {
 
     my $ser = $self->serializer;
 
-    Data::Stream::Bulk::Path::Class->new( dir => $self->object_dir, only_files => 1 )->filter(sub { [ map {
+    # FIXME no Path::Class
+    Data::Stream::Bulk::Path::Class->new( dir => $self->dir->subdir($self->object_dir), only_files => 1 )->filter(sub { [ map {
         $ser->deserialize_from_stream( $_->openr );
     } @$_ ]});
 }
@@ -251,6 +235,7 @@ sub root_entries {
 
     my $ser = $self->serializer;
 
+    # FIXME no Path::Class
     Data::Stream::Bulk::Path::Class->new( dir => $self->root_set_dir, only_files => 1 )->filter(sub { [ map {
         $ser->deserialize_from_stream( $_->openr );
     } @$_ ]});
@@ -296,21 +281,15 @@ The directory for the backend.
 
 If true (defaults to false) the directories will be created at instantiation time.
 
-=item lock
-
-Whether or not locking is enabled.
-
-Defaults to true.
-
 =item object_dir
 
-Defaults to the subdirectory C<all> of C<dir>
+Defaults to C<all>.
 
-=item root_dir
+=item root_set_dir
 
-Defaults to the subdirectory C<root> of C<dir>
+Defaults C<root>.
 
-Root set entries are hard linked into this directory as well.
+Root set entries are symlinked into this directory as well.
 
 =item trie
 
