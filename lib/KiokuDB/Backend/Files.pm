@@ -12,7 +12,7 @@ use File::Path qw(remove_tree make_path);
 
 use Directory::Transactional;
 
-use Data::Stream::Bulk::Path::Class;
+use Data::Stream::Bulk::Util qw(bulk);
 
 use MooseX::Types::Path::Class qw(Dir File);
 
@@ -23,6 +23,9 @@ our $VERSION = "0.01";
 with qw(
     KiokuDB::Backend
     KiokuDB::Backend::Serialize::Delegate
+    KiokuDB::Backend::Role::Clear
+    KiokuDB::Backend::Role::Scan
+    KiokuDB::Backend::Role::Query::Simple::Linear
     KiokuDB::Backend::Role::TXN
     KiokuDB::Backend::Role::TXN::Nested
 );
@@ -215,8 +218,11 @@ sub create_dirs {
 sub clear {
     my $self = shift;
 
+    die "todo" if $self->trie;
+
     # FIXME transactional?
-    remove_tree( $_, { keep_root => 1 }) for $self->root_set_dir, File::Spec->catdir( $self->dir, $self->object_dir );
+    my @files = grep { $_ ne '.' and $_ ne '..' } $self->_txn_manager->readdir($self->object_dir);
+    $self->delete(@files);
 }
 
 sub all_entries {
@@ -224,21 +230,29 @@ sub all_entries {
 
     my $ser = $self->serializer;
 
-    # FIXME no Path::Class
-    Data::Stream::Bulk::Path::Class->new( dir => $self->dir->subdir($self->object_dir), only_files => 1 )->filter(sub { [ map {
-        $ser->deserialize_from_stream( $_->openr );
-    } @$_ ]});
+    die "todo" if $self->trie;
+
+    my $t = $self->_txn_manager;
+
+    my @ids = grep { $_ ne '.' and $_ ne '..' } $t->readdir($self->object_dir);
+
+    # FIXME iterative
+    bulk($self->get(@ids));
 }
 
-sub root_entries {
+sub root_entries__ {
     my $self = shift;
 
     my $ser = $self->serializer;
 
-    # FIXME no Path::Class
-    Data::Stream::Bulk::Path::Class->new( dir => $self->root_set_dir, only_files => 1 )->filter(sub { [ map {
-        $ser->deserialize_from_stream( $_->openr );
-    } @$_ ]});
+    die "todo" if $self->trie;
+
+    my $t = $self->_txn_manager;
+
+    my @ids = grep { $_ ne '.' and $_ ne '..' } $t->readdir($self->root_set_dir);
+
+    # FIXME iterative
+    bulk($self->get(@ids));
 }
 
 __PACKAGE__->meta->make_immutable;
