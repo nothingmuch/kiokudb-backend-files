@@ -1,3 +1,6 @@
+0.02_02
+    - Update dep on KiokuDB
+
 0.02_01
     - Use Directory::Transactional to provide transaction support
 
