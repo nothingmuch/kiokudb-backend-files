@@ -92,11 +92,22 @@ has _txn_manager => (
     lazy_build => 1,
 );
 
+for (qw(nfs global_lock auto_commit)) {
+    has $_ => (
+        isa => "Bool",
+        is  => "ro",
+        predicate => "has_$_",
+    );
+}
+
 sub _build__txn_manager {
     my $self = shift;
 
     Directory::Transactional->new(
         root => $self->dir,
+        ( $self->has_nfs         ? ( nfs         => $self->nfs         ) : () ),
+        ( $self->has_global_lock ? ( global_lock => $self->global_lock ) : () ),
+        ( $self->has_auto_commit ? ( auto_commit => $self->auto_commit ) : () ),
     );
 }
 
