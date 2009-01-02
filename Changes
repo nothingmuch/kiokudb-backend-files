@@ -1,3 +1,12 @@
+0.03
+    - Allow passing 'nfs', 'global_lock' and 'auto_commit' flags to
+      Directory::Transactional
+    - Update dependency on Directory::Transactional to 0.03
+
+0.02
+    - Delegate txn_do methods
+    - Update dependency on Directory::Transactional to 0.02
+
 0.02_02
     - Update dep on KiokuDB
 
