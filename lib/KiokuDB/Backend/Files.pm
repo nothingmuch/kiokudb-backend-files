@@ -174,6 +174,11 @@ sub insert_entry {
 
     my $t = $self->_txn_manager;
 
+    if ( not($entry->has_prev) and $t->exists($file) ) {
+        # this is a new entry
+        croak "Entry $id already exists";
+    }
+
     my $fh = $t->openw($file);
 
     $self->serializer->serialize_to_stream($fh, $entry);
