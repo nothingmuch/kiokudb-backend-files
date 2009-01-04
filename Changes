@@ -1,3 +1,7 @@
+0.04
+    - Die if a file already exists but there is no prev entry (insert instead
+      of update).
+
 0.03
     - Allow passing 'nfs', 'global_lock' and 'auto_commit' flags to
       Directory::Transactional
