@@ -174,6 +174,8 @@ sub insert_entry {
 
     my $t = $self->_txn_manager;
 
+    $t->lock_path_write($file);
+
     if ( not($entry->has_prev) and $t->exists($file) ) {
         # this is a new entry
         croak "Entry $id already exists";
