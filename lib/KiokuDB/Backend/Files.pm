@@ -33,9 +33,7 @@ with qw(
 sub BUILD {
     my $self = shift;
 
-    if ( $self->create ) {
-        $self->create_dirs;
-    } else {
+    unless ( $self->create ) {
         my $dir = $self->dir;
         $dir->open || croak("$dir: $!");
     }
@@ -227,13 +225,6 @@ sub root_set_file {
     my ( $self, $uid ) = @_;
 
     $self->_trie_path( $self->root_set_dir, $uid );
-}
-
-sub create_dirs {
-    my $self = shift;
-
-    make_path( $self->object_dir );
-    make_path( $self->root_set_dir );
 }
 
 sub clear {
