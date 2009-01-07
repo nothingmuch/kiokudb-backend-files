@@ -117,13 +117,19 @@ sub txn_rollback { shift->_txn_manager->txn_rollback(@_) }
 sub get {
     my ( $self, @uids ) = @_;
 
+    my $t = $self->_txn_manager->_auto_txn;
+
     return map { $self->get_entry($_) } @uids;
 }
 
 sub insert {
     my ( $self, @entries ) = @_;
 
-    foreach my $entry ( @entries ) {
+    # in case we're not in a transaction, make sure it's scoped for the entire insert
+    my $t = $self->_txn_manager->_auto_txn;
+
+    # we sort so that locks are taken in a consistent order, reducing chance of deadlocks
+    foreach my $entry ( sort { $a->id cmp $b->id } @entries ) {
         $self->insert_entry($entry);
     }
 }
@@ -134,6 +140,8 @@ sub delete {
     my @uids = map { ref($_) ? $_->id : $_ } @ids_or_entries;
 
     my $t = $self->_txn_manager;
+
+    my $g = $t->_auto_txn;
 
     foreach my $uid ( @uids ) {
         foreach my $file ( $self->object_file($uid), $self->root_set_file($uid) ) {
@@ -146,6 +154,9 @@ sub exists {
     my ( $self, @uids ) = @_;
 
     my $t = $self->_txn_manager;
+
+    my $g = $t->_auto_txn;
+
     map { $t->exists($self->object_file($_)) } @uids;
 }
 
