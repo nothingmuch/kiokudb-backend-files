@@ -16,6 +16,8 @@ use Data::Stream::Bulk::Util qw(bulk);
 
 use MooseX::Types::Path::Class qw(Dir File);
 
+sub _file_to_id_stream; # cleanup
+
 use namespace::clean -except => 'meta';
 
 our $VERSION = "0.04";
@@ -250,36 +252,56 @@ sub clear {
     }
 }
 
-sub all_entries {
+sub all_entry_files {
     my $self = shift;
 
-    my $ser = $self->serializer;
-
-    my $t = $self->_txn_manager;
-
-    my $stream = $t->file_stream( only_files => 1, dir => $self->object_dir );
-
-    $stream->filter(sub { [ map { $ser->deserialize_from_stream($t->openr($_)) } @$_ ]});
+    $self->_txn_manager->file_stream( only_files => 1, dir => $self->object_dir );
 }
 
-# broken:
-sub root_entries {
+sub root_entry_files {
     my $self = shift;
 
-    my $ser = $self->serializer;
+    $self->_txn_manager->file_stream( only_files => 1, dir => $self->root_set_dir );
+}
 
-    my $t = $self->_txn_manager;
+sub _file_to_id_stream {
+    my $stream = shift;
 
-    my $stream = $t->file_stream( only_files => 1, dir => $self->root_set_dir );
-
-    my $ids = $stream->filter(sub {[
+    $stream->filter(sub {[
         map {
             my ( undef, undef, $file ) = File::Spec->splitpath($_);
             $file;
         } @$_
     ]});
+}
 
-    $ids->filter(sub{[ $self->get(@$_) ]});
+sub all_entry_ids {
+    my $self = shift;
+
+    _file_to_id_stream($self->all_entry_files);
+}
+
+sub root_entry_ids {
+    my $self = shift;
+
+    _file_to_id_stream($self->root_entry_files);
+}
+
+sub all_entries {
+    my $self = shift;
+
+    my $ser = $self->serializer;
+    my $t = $self->_txn_manager;
+
+    my $stream = $self->all_entry_files;
+
+    $stream->filter(sub { [ map { $ser->deserialize_from_stream($t->openr($_)) } @$_ ]});
+}
+
+# FIXME when we're no longer using empty files this should be fixed
+sub root_entries {
+    my $self = shift;
+    $self->root_entry_ids->filter(sub{[ $self->get(@$_) ]});
 }
 
 __PACKAGE__->meta->make_immutable;
