@@ -150,6 +150,8 @@ sub delete {
             $t->unlink($file);
         }
     }
+
+    return;
 }
 
 sub exists {
