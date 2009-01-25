@@ -30,6 +30,7 @@ with qw(
     KiokuDB::Backend::Role::Query::Simple::Linear
     KiokuDB::Backend::Role::TXN
     KiokuDB::Backend::Role::TXN::Nested
+    KiokuDB::Backend::Role::Concurrency::POSIX
 );
 
 sub BUILD {

@@ -23,6 +23,6 @@ WriteMakefile(
         'IO' => '1.2301', # binmode method
 
         'File::Path' => 2.07,
-        'Directory::Transactional' => '0.03',
+        'Directory::Transactional' => '0.06',
     },
 );
