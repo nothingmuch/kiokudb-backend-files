@@ -20,7 +20,7 @@ sub _file_to_id_stream; # cleanup
 
 use namespace::clean -except => 'meta';
 
-our $VERSION = "0.04";
+our $VERSION = "0.05";
 
 with qw(
     KiokuDB::Backend
