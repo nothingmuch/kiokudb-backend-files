@@ -1,3 +1,6 @@
+0.05
+    - Add new concurrency test
+
 0.04
     - Die if a file already exists but there is no prev entry (insert instead
       of update).
