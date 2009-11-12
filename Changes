@@ -1,3 +1,6 @@
+0.06
+    - Catch the exception for opening a nonexistent file and make it nonfatal
+
 0.05
     - Add new concurrency test
 
